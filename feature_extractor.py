@@ -4,12 +4,12 @@
 # Datum: Tue Sep 14 18:00:32 2021
 # Python 3.8.8
 # Ubuntu 20.04.1
-from typing import List, Optional, Set, Tuple
+from typing import List, Tuple
 
 import pandas as pd
 from nltk.probability import FreqDist
 from nltk.tokenize.casual import TweetTokenizer
-from nltk.util import bigrams, ngrams, trigrams
+from nltk.util import ngrams
 
 
 class FeatureExtractor:
