@@ -10,16 +10,17 @@ import re
 import pandas as pd
 
 
-def split_text_id_columns(line, id_column=False):
+def split_text_id_columns(line: str, id_column: bool = False) -> str:
     """Split column containing ids and text"""
     pattern = re.compile(r"(\d{3,5}\s+)(.+)")
     match = re.match(pattern, line)
+    assert match is not None
     if id_column:
         return match.group(1)
     return match.group(2)
 
 
-def transform_to_num_labels(line):
+def transform_to_num_labels(line: str) -> int:
     label_map = {"none": 0, "favor": 1, "against": 2}
     label = line.split(":")[1]
     if label in label_map:
@@ -27,7 +28,7 @@ def transform_to_num_labels(line):
     return 0
 
 
-def prepare_data(datapath, delimiter="\t"):
+def prepare_data(datapath: str, delimiter: str = "\t") -> pd.DataFrame:
     """
     Splits text-id column in two separate columns and adds new columns
     to data frame. Transforms labels in other columns to numeric values,
