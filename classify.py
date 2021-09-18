@@ -19,6 +19,7 @@ from sklearn.svm import SVC
 from feature_extractor import FeatureExtractor
 from preprocessing import prepare_data
 
+
 logging.basicConfig(
     filename="stance.log",
     level=logging.DEBUG,
@@ -66,7 +67,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
     ]
     y_pred = estimator.predict(X_test)
     print("Micro F1 score for classification of explicit stance targets:")
-    print(compute_micro_f1(y_test, y_pred))
+    print(round(compute_micro_f1(y_test, y_pred) * 100, 2))
 
 
 def parse_arguments(arguments: Optional[List[str]] = None) -> argparse.Namespace:
@@ -90,7 +91,7 @@ def compute_micro_f1(y_true: Any, y_pred: Any) -> float:
         f1_scores_per_label.append(
             f1_score(y_true[:, i], y_pred[:, i], average="micro")
         )
-    logger.info(f"f1 score per label: {f1_scores_per_label}")
+    logger.info(f"f1 score per label of best classifier: {f1_scores_per_label}")
     return sum(f1_scores_per_label) / len(f1_scores_per_label)
 
 
