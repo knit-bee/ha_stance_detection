@@ -11,15 +11,15 @@ import os
 from typing import Any, List, Optional, Union
 
 import numpy as np
+import pandas as pd
+from sklearn.dummy import DummyClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.svm import SVC
-from sklearn.dummy import DummyClassifier
 
 from feature_extractor import FeatureExtractor
 from preprocessing import prepare_data
-
 
 logging.basicConfig(
     filename="stance.log",
@@ -44,15 +44,24 @@ def main(arguments: Optional[List[str]] = None) -> None:
     extractor.collect_features(list(train_set["text"]))
 
     X_train = train_set["text"].apply(extractor.get_features_for_instance)
-    y_train = np.array(train_set[label_columns])
     X_test = test_set["text"].apply(extractor.get_features_for_instance)
+
+    # explicit stance label sets
+    y_train = np.array(train_set[label_columns])
     y_test = np.array(test_set[label_columns])
 
+    # debate stance label sets
+    y_debate_train = train_set["[debate stance:polarity]"]
+    y_debate_test = test_set["[debate stance:polarity]"]
+
+    # Explicit stance classification
     # set up majority class baseline
     majority_baseline = majority_class_baseline(X_train, y_train)
     baseline_label = majority_baseline.predict(X_test)
     logger.info("baseline")
-    print(f"Majority class baseline: \n {compute_micro_f1(y_test, baseline_label)}")
+    print(
+        f"Majority class baseline: \n {round(compute_micro_f1(y_test, baseline_label),2)}"
+    )
     # perform 10-fold cross-validation on the training set with a svm
     svm = SVC(kernel="linear", C=1, random_state=11)
     classifier = MultiOutputClassifier(svm, n_jobs=-1)
@@ -68,12 +77,33 @@ def main(arguments: Optional[List[str]] = None) -> None:
     logger.info(f"Cross-validation accuracy per classifier: \n {scores['test_score']}")
 
     # use best classifier to predict test set
-    estimator = scores["estimator"][
-        list(scores["test_score"]).index(max(scores["test_score"]))
-    ]
+    estimator = get_best_classifier(scores)
     y_pred = estimator.predict(X_test)
     print("Micro F1 score for classification of explicit stance targets:")
-    print(round(compute_micro_f1(y_test, y_pred) * 100, 2))
+    print(round(compute_micro_f1(y_test, y_pred), 2))
+
+    # Debate stance classification
+    logger.info("Debate stance classification")
+    debate_majority_baseline = majority_class_baseline(
+        X_train,
+        y_debate_train,
+    ).predict(X_test)
+    print(
+        f"F1 score for baseline of debate stance: \n\
+{round(f1_score(y_debate_test, debate_majority_baseline,average='micro'),2)}"
+    )
+    debate_scores = cross_validate(
+        svm, X_train, y_debate_train, cv=10, return_estimator=True
+    )
+    logger.info(
+        f"Cross-validation accuracy per classifier: \n {debate_scores['test_score']}"
+    )
+    debate_estimator = get_best_classifier(debate_scores)
+    y_pred_debate = debate_estimator.predict(X_test)
+    print(
+        f"F1 score for classification of debate stance: \n \
+{round(f1_score(y_debate_test, y_pred_debate, average='micro'),2)}"
+    )
 
 
 def parse_arguments(arguments: Optional[List[str]] = None) -> argparse.Namespace:
@@ -86,7 +116,11 @@ def parse_arguments(arguments: Optional[List[str]] = None) -> argparse.Namespace
         default=argparse.SUPPRESS,
         help="Show this help message an exit",
     )
-    parser.add_argument("data_path", help="File or folder to process", type=valid_path)
+    parser.add_argument(
+        "data_path",
+        help="File or folder to process",
+        type=valid_path,
+    )
 
     return parser.parse_args(arguments)
 
@@ -122,10 +156,18 @@ def valid_path(input_string: str) -> Union[bool, str]:
     return False
 
 
-def majority_class_baseline(X_train, y_train):
+def majority_class_baseline(
+    X_train: pd.DataFrame, y_train: pd.Series
+) -> DummyClassifier:
     baseline_classifier = DummyClassifier(strategy="most_frequent")
     baseline_classifier.fit(X_train, y_train)
     return baseline_classifier
+
+
+def get_best_classifier(scores: dict) -> SVC:
+    return scores["estimator"][
+        list(scores["test_score"]).index(max(scores["test_score"]))
+    ]
 
 
 if __name__ == "__main__":
