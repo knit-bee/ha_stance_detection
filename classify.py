@@ -15,6 +15,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.svm import SVC
+from sklearn.dummy import DummyClassifier
 
 from feature_extractor import FeatureExtractor
 from preprocessing import prepare_data
@@ -47,6 +48,11 @@ def main(arguments: Optional[List[str]] = None) -> None:
     X_test = test_set["text"].apply(extractor.get_features_for_instance)
     y_test = np.array(test_set[label_columns])
 
+    # set up majority class baseline
+    majority_baseline = majority_class_baseline(X_train, y_train)
+    baseline_label = majority_baseline.predict(X_test)
+    logger.info("baseline")
+    print(f"Majority class baseline: \n {compute_micro_f1(y_test, baseline_label)}")
     # perform 10-fold cross-validation on the training set with a svm
     svm = SVC(kernel="linear", C=1, random_state=11)
     classifier = MultiOutputClassifier(svm, n_jobs=-1)
@@ -114,6 +120,12 @@ def valid_path(input_string: str) -> Union[bool, str]:
     if os.path.isfile(input_string) or os.path.isdir(input_string):
         return input_string
     return False
+
+
+def majority_class_baseline(X_train, y_train):
+    baseline_classifier = DummyClassifier(strategy="most_frequent")
+    baseline_classifier.fit(X_train, y_train)
+    return baseline_classifier
 
 
 if __name__ == "__main__":
