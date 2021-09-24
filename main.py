@@ -4,6 +4,17 @@
 # Datum: Fri Sep 24 14:41:58 2021
 # Python 3.8.8
 # Ubuntu 20.04.1
+"""
+Replication project for Wojatzki and Zesch (2016). Run from command line to
+process and classify data.
+First, the data will be split into a training and a test set (10%), then
+using 10-fold cros-validation, a SVM-classifier will be trained for
+classification of explicit stance and another SVM to classify debate stance.
+Using a decision tree classifier the debate stance labels are also classified
+based on the explicit stance labels. Outputs are micro F1 scores of the
+classifiers.
+"""
+
 import argparse
 import logging
 import os
@@ -78,7 +89,6 @@ def main(arguments: Optional[List[str]] = None) -> None:
         cv=10,
         return_estimator=True,
     )
-
     logger.info(f"Cross-validation accuracy per classifier: \n {scores['test_score']}")
 
     # use best classifier to predict test set
@@ -138,7 +148,11 @@ def main(arguments: Optional[List[str]] = None) -> None:
 
 def parse_arguments(arguments: Optional[List[str]] = None) -> argparse.Namespace:
     """Construct argument parser"""
-    parser = argparse.ArgumentParser(add_help=False, description="")
+    parser = argparse.ArgumentParser(
+        add_help=False,
+        description="Process and classify data for explicit and debate stance \
+using a SVM in 10-fold cross validation and a decision tree classifier.",
+    )
     parser.add_argument(
         "--help",
         "-h",
@@ -148,7 +162,7 @@ def parse_arguments(arguments: Optional[List[str]] = None) -> argparse.Namespace
     )
     parser.add_argument(
         "data_path",
-        help="File or folder to process",
+        help="File to process",
         type=valid_path,
     )
 
