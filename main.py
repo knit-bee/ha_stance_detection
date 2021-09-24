@@ -75,7 +75,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         classifier,
         X_train,
         y_train,
-        cv=2,
+        cv=10,
         return_estimator=True,
     )
 
@@ -101,7 +101,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         svm,
         X_train,
         y_debate_train,
-        cv=2,
+        cv=10,
         return_estimator=True,
     )
     logger.info(
