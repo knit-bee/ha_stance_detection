@@ -21,6 +21,7 @@ def split_text_id_columns(line: str, id_column: bool = False) -> str:
 
 
 def reduce_labels(line: str) -> str:
+    """Simplify labels in data"""
     labels = ["none", "favor", "against"]
     label = line.split(":")[1]
     return label if label in labels else "none"
@@ -51,7 +52,7 @@ def prepare_data(datapath: str, delimiter: str = "\t") -> pd.DataFrame:
     for column in data.columns:
         if column == "id  text":
             continue
-    data[column] = data[column].apply(reduce_labels)
+        data[column] = data[column].apply(reduce_labels)
 
     # separate columns
     data["text"] = data["id  text"].apply(split_text_id_columns)
