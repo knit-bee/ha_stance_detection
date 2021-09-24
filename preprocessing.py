@@ -20,12 +20,10 @@ def split_text_id_columns(line: str, id_column: bool = False) -> str:
     return match.group(2)
 
 
-def transform_to_num_labels(line: str) -> int:
-    label_map = {"none": 0, "favor": 1, "against": 2}
+def reduce_labels(line: str) -> str:
+    labels = ["none", "favor", "against"]
     label = line.split(":")[1]
-    if label in label_map:
-        return label_map[label]
-    return 0
+    return label if label in labels else "none"
 
 
 def prepare_data(datapath: str, delimiter: str = "\t") -> pd.DataFrame:
@@ -48,11 +46,12 @@ def prepare_data(datapath: str, delimiter: str = "\t") -> pd.DataFrame:
 
     """
     data = pd.read_csv(datapath, delimiter)
-    # transform labels to numeric values
+
+    # transform labels to consistent labels
     for column in data.columns:
         if column == "id  text":
             continue
-        data[column] = data[column].apply(transform_to_num_labels)
+    data[column] = data[column].apply(reduce_labels)
 
     # separate columns
     data["text"] = data["id  text"].apply(split_text_id_columns)
