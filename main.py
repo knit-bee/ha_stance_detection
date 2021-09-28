@@ -130,7 +130,11 @@ def main(arguments: Optional[List[str]] = None) -> None:
     y_pred_num = transform_categorical_data(y_pred, label_columns)
     y_test_num = transform_categorical_data(y_test, label_columns)
 
-    dt = DecisionTreeClassifier(criterion="entropy", max_depth=5)
+    dt = DecisionTreeClassifier(
+        criterion="entropy",
+        max_depth=10,
+        min_samples_leaf=4,
+    )
     dt.fit(y_train_num, y_debate_train)
     dt_prediction = dt.predict(y_pred_num)
     print(
